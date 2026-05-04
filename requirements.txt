@@ -1,0 +1,6 @@
+FastApi
+uvicorn
+sqlalchemy
+pymysql
+PyJWT
+python-multipart
