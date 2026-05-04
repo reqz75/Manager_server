@@ -1,5 +1,5 @@
 @echo off
 title server
 echo server runing...
-python main.py
+python app/main.py
 pause
