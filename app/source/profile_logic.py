@@ -80,7 +80,7 @@ class sessions:
             result = conn.execute(text(sql), {'login': login}).fetchone()
         return dict(result._mapping) if result else None
 
-    def load_profile_by_login(self, login: str):
+    def load_profile_login(self, login: str):
         sql = "SELECT role, name, contact_info, avatar, registered_at FROM profiles WHERE user_id = (SELECT id FROM users WHERE login = :login)"
         
         with self.engine.connect() as conn:

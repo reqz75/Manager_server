@@ -3,10 +3,11 @@ import os
 from fastapi import FastAPI, Header, Form, APIRouter, File, UploadFile
 from pydantic import BaseModel
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from source.sessions_logic import sessions
+from source.profile_logic import sessions
 
 router = APIRouter()
 sessions = sessions()
+
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
@@ -34,5 +35,6 @@ def edit_profile(
 
 @router.get("/profile/{login}")
 def load_other_profile(login: str):
-    result = sessions.load_profile_by_login(login)
+    result = sessions.load_profile_login(login)
     return result
+
