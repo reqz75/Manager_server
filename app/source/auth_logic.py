@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from secret.jwt import jwt_coder
+from fastapi import HTTPException
 
 class auth:
 
@@ -22,14 +23,16 @@ class auth:
         except IntegrityError:
 
             conn.rollback()
-            return None
+            return {"error": "IntegrityError"}
     
     def auto(self, login, password):
         sql = "SELECT * FROM users WHERE login = :login AND password = :password"
         
         with self.engine.connect() as conn:
             result = conn.execute(text(sql), {'login': login, 'password': password}).fetchone()
+            export = jwt_coder.create_token(login)
             if result is not None:
-                return jwt_coder.create_token(login)
+                return {"token": export}
             else:
-                return None
+                raise HTTPException(status_code=401, detail="неправильные данные")
+
