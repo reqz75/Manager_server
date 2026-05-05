@@ -100,3 +100,15 @@ CREATE INDEX idx_task_members_user_id ON task_members(user_id);
 CREATE INDEX idx_reports_task_id ON reports(task_id);
 CREATE INDEX idx_reports_user_id ON reports(user_id);
 CREATE INDEX idx_report_attachments_report_id ON report_attachments(report_id);
+
+DELIMITER $$
+
+CREATE TRIGGER createProfile
+AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+    INSERT INTO profiles (user_id, name, avatar, registered_at)
+    VALUES (NEW.id, NEW.login, 'uploads/avatars/default_avatar.png', NOW());
+END$$
+
+DELIMITER ;

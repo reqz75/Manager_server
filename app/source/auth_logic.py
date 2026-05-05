@@ -23,7 +23,8 @@ class auth:
         except IntegrityError:
 
             conn.rollback()
-            return {"error": "IntegrityError"}
+            raise HTTPException(status_code=409, detail="IntegrityError")
+            #return {"error": "IntegrityError"}
     
     def auto(self, login, password):
         sql = "SELECT * FROM users WHERE login = :login AND password = :password"
