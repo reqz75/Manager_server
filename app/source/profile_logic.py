@@ -1,6 +1,7 @@
 import sys
 import os
 import uuid
+from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -87,3 +88,11 @@ class sessions:
             result = conn.execute(text(sql), {'login': login}).fetchone()
         
         return dict(result._mapping) if result else None
+        
+    def load_avatars(self, filename: str):
+        file_path = f"uploads/avatars/{filename}"
+        
+        if os.path.exists(file_path):
+            return FileResponse(file_path)
+        
+        raise HTTPException(status_code=404, detail="аватар не найден")

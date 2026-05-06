@@ -38,3 +38,7 @@ def load_other_profile(login: str):
     result = sessions.load_profile_login(login)
     return result
 
+@router.get("/uploads/avatars/{filename}")
+def load_avatars(filename: str):
+    result = sessions.load_avatars(filename)
+    return result
