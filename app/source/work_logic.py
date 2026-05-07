@@ -1,9 +1,12 @@
 import sys
 import os
 from sqlalchemy import create_engine, text
+from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
+from fastapi.responses import FileResponse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from secret.jwt import jwt_coder
+
 
 class work:
 
@@ -76,3 +79,11 @@ class work:
             result = conn.execute(text(sql), {'task_id': task_id, 'login': login}).fetchone()
         
         return dict(result._mapping) if result else None
+
+    def get_task_att(self, filename: str):
+        file_path = f"uploads/tasks/{filename}"
+        
+        if os.path.exists(file_path):
+            return FileResponse(file_path)
+        
+        raise HTTPException(status_code=404, detail="отчет не найден")

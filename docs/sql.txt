@@ -112,3 +112,58 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+DELIMITER $$
+
+-- 1. Удаление вложений отчета
+CREATE TRIGGER delete_report_attachments
+BEFORE DELETE ON reports
+FOR EACH ROW
+BEGIN
+    DELETE FROM report_attachments WHERE report_id = OLD.id;
+END$$
+
+-- 2. Удаление вложений задачи и связанных данных
+CREATE TRIGGER delete_task_full_cleanup
+BEFORE DELETE ON tasks
+FOR EACH ROW
+BEGIN
+    -- Удаляем вложения всех отчетов задачи
+    DELETE ra FROM report_attachments ra
+    INNER JOIN reports r ON r.id = ra.report_id
+    WHERE r.task_id = OLD.id;
+    
+    -- Удаляем отчеты задачи
+    DELETE FROM reports WHERE task_id = OLD.id;
+    
+    -- Удаляем вложения задачи
+    DELETE FROM task_attachments WHERE task_id = OLD.id;
+    
+    -- Удаляем участников задачи (опционально)
+    DELETE FROM task_members WHERE task_id = OLD.id;
+END$$
+
+-- 3. Удаление при удалении пользователя (опционально)
+CREATE TRIGGER delete_user_related_attachments
+BEFORE DELETE ON users
+FOR EACH ROW
+BEGIN
+    -- Удаляем вложения отчетов пользователя
+    DELETE ra FROM report_attachments ra
+    INNER JOIN reports r ON r.id = ra.report_id
+    WHERE r.user_id = OLD.id;
+    
+    -- Удаляем отчеты пользователя
+    DELETE FROM reports WHERE user_id = OLD.id;
+    
+    -- Удаляем из task_members
+    DELETE FROM task_members WHERE user_id = OLD.id;
+    
+    -- Удаляем из department_members
+    DELETE FROM department_members WHERE member_id = OLD.id;
+    
+    -- Обновляем departments (head_id)
+    UPDATE departments SET head_id = NULL WHERE head_id = OLD.id;
+END$$
+
+DELIMITER ;

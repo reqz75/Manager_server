@@ -48,3 +48,8 @@ def load_my_filter_tasks(filters: TaskFilter, authorization: str = Header(...)):
 def load_task(request: OneTask, authorization: str = Header(...)):
     result = work.load_task(authorization, request.task_id)
     return result
+
+@router.get("/uploads/tasks/{filename}")
+def get_task_att(filename: str):
+    result = work.get_task_att(filename)
+    return result
