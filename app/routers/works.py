@@ -21,6 +21,21 @@ class TaskFilter(BaseModel):
 class OneTask(BaseModel):
     task_id: int
 
+class CreateTask(BaseModel):
+    title: str
+    description: str
+    deadline: date
+    attachments: Optional[List[str]] = None
+
+class DeleteTask(BaseModel):
+    task_id: int
+
+class DepartmentMember(BaseModel):
+    member_login: str
+
+class TaskMember(BaseModel):
+    task_id: int
+    member_login: str
 
 @router.post("/load_my_dep")
 def load_my_dep(authorization: str = Header(...)):
@@ -52,4 +67,34 @@ def load_task(request: OneTask, authorization: str = Header(...)):
 @router.get("/uploads/tasks/{filename}")
 def get_task_att(filename: str):
     result = work.get_task_att(filename)
+    return result
+
+@router.post("/create_task")
+def create_task(request: CreateTask, authorization: str = Header(...)):
+    result = work.create_task(authorization, request.title, request.description, request.deadline, request.attachments)
+    return result
+
+@router.post("/delete_task")
+def delete_task(request: DeleteTask, authorization: str = Header(...)):
+    result = work.delete_task(authorization, request.task_id)
+    return result
+
+@router.post("/add_member_to_department")
+def add_member_to_department(request: DepartmentMember, authorization: str = Header(...)):
+    result = work.add_member_to_department(authorization, request.member_login)
+    return result
+
+@router.post("/remove_member_from_department")
+def remove_member_from_department(request: DepartmentMember, authorization: str = Header(...)):
+    result = work.remove_member_from_department(authorization, request.member_login)
+    return result
+
+@router.post("/attach_member_to_task")
+def attach_member_to_task(request: TaskMember, authorization: str = Header(...)):
+    result = work.attach_member_to_task(authorization, request.task_id, request.member_login)
+    return result
+
+@router.post("/remove_member_from_task")
+def remove_member_from_task(request: TaskMember, authorization: str = Header(...)):
+    result = work.remove_member_from_task(authorization, request.task_id, request.member_login)
     return result

@@ -87,3 +87,181 @@ class work:
             return FileResponse(file_path)
         
         raise HTTPException(status_code=404, detail="отчет не найден")
+
+    def create_task(self, token, title, description, deadline, attachments):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        if attachments is None:
+            attachments = []
+
+        with self.engine.connect() as conn:
+            sql_check = "SELECT id FROM departments WHERE head_id = (SELECT id FROM users WHERE login = :login) LIMIT 1"
+            department = conn.execute(text(sql_check), {'login': login}).fetchone()
+            
+            if not department:
+                return None
+            
+            department_id = department[0]
+
+            sql_task = "INSERT INTO tasks (title, description, created_by, deadline, status) VALUES (:title, :description, (SELECT id FROM users WHERE login = :login), :deadline, 'pending')"
+            result = conn.execute(text(sql_task), {'title': title, 'description': description, 'login': login, 'deadline': deadline})
+            task_id = result.lastrowid
+
+            for attachment in attachments:
+                sql_att = "INSERT INTO task_attachments (task_id, attachment_link) VALUES (:task_id, :attachment_link)"
+                conn.execute(text(sql_att), {'task_id': task_id, 'attachment_link': attachment})
+
+            conn.commit()
+            
+            return self.load_task(token, task_id)
+
+    def delete_task(self, token, task_id):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        sql = "DELETE FROM tasks WHERE id = :task_id AND EXISTS (SELECT 1 FROM departments WHERE head_id = (SELECT id FROM users WHERE login = :login))"
+        
+        with self.engine.connect() as conn:
+            result = conn.execute(text(sql), {'login': login, 'task_id': task_id})
+            conn.commit()
+
+        if result.rowcount > 0:
+            return {'task_deleted': task_id}
+        return None
+
+
+    def add_member_to_department(self, token, member_login):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        with self.engine.connect() as conn:
+            sql_check = "SELECT id FROM departments WHERE head_id = (SELECT id FROM users WHERE login = :login) LIMIT 1"
+            department = conn.execute(text(sql_check), {'login': login}).fetchone()
+            
+            if not department:
+                return None
+            
+            department_id = department[0]
+
+            sql_user = "SELECT id FROM users WHERE login = :member_login"
+            user = conn.execute(text(sql_user), {'member_login': member_login}).fetchone()
+            
+            if not user:
+                return None
+            
+            user_id = user[0]
+
+            sql_insert = "INSERT INTO department_members (department_id, member_id) VALUES (:department_id, :member_id)"
+            
+            try:
+                conn.execute(text(sql_insert), {'department_id': department_id, 'member_id': user_id})
+                conn.commit()
+                return {'added': member_login}
+            except IntegrityError:
+                conn.rollback()
+                return None
+
+
+    def remove_member_from_department(self, token, member_login):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        with self.engine.connect() as conn:
+            sql_check = "SELECT id FROM departments WHERE head_id = (SELECT id FROM users WHERE login = :login) LIMIT 1"
+            department = conn.execute(text(sql_check), {'login': login}).fetchone()
+            
+            if not department:
+                return None
+            
+            department_id = department[0]
+
+            sql_user = "SELECT id FROM users WHERE login = :member_login"
+            user = conn.execute(text(sql_user), {'member_login': member_login}).fetchone()
+            
+            if not user:
+                return None
+            
+            user_id = user[0]
+
+            sql_delete = "DELETE FROM department_members WHERE department_id = :department_id AND member_id = :member_id"
+            result = conn.execute(text(sql_delete), {'department_id': department_id, 'member_id': user_id})
+            conn.commit()
+
+            if result.rowcount > 0:
+                return {'removed': member_login}
+            return None
+
+    def attach_member_to_task(self, token, task_id, member_login):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        with self.engine.connect() as conn:
+            sql = "SELECT 1 FROM tasks t WHERE t.id = :task_id AND EXISTS (SELECT 1 FROM departments d WHERE d.head_id = (SELECT id FROM users WHERE login = :login) AND EXISTS (SELECT 1 FROM department_members dm WHERE dm.department_id = d.id AND dm.member_id = t.created_by))"
+            check = conn.execute(text(sql), {'login': login, 'task_id': task_id}).fetchone()
+            
+            if not check:
+                return None
+
+            sql_user = "SELECT id FROM users WHERE login = :member_login"
+            user = conn.execute(text(sql_user), {'member_login': member_login}).fetchone()
+            
+            if not user:
+                return None
+            
+            user_id = user[0]
+
+            sql_insert = "INSERT INTO task_members (task_id, user_id) VALUES (:task_id, :user_id)"
+            
+            try:
+                conn.execute(text(sql_insert), {'task_id': task_id, 'user_id': user_id})
+                conn.commit()
+                return {'attached': member_login, 'task_id': task_id}
+            except IntegrityError:
+                conn.rollback()
+                return None
+
+
+    def remove_member_from_task(self, token, task_id, member_login):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        with self.engine.connect() as conn:
+            sql = "DELETE FROM task_members WHERE task_id = :task_id AND user_id = (SELECT id FROM users WHERE login = :member_login) AND EXISTS (SELECT 1 FROM departments d WHERE d.head_id = (SELECT id FROM users WHERE login = :login) AND EXISTS (SELECT 1 FROM department_members dm WHERE dm.department_id = d.id AND dm.member_id = (SELECT created_by FROM tasks WHERE id = :task_id)))"
+            
+            result = conn.execute(text(sql), {'login': login, 'task_id': task_id, 'member_login': member_login})
+            conn.commit()
+
+            if result.rowcount > 0:
+                return {'removed': member_login, 'task_id': task_id}
+            return None
