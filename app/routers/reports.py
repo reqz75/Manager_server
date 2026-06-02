@@ -25,32 +25,32 @@ class createRep(BaseModel):
     description: str
     attachments: Optional[List[str]] = None
 
-@router.post("/load_full_report")
+@router.post("/manager/load_full_report")
 def load_full_report(request: getReportId, authorization: str = Header(...)):
     result = report.load_full_report(authorization, request.report_id)
     return result
 
-@router.post("/create_report")
+@router.post("/manager/create_report")
 def create_report(request: createRep, authorization: str = Header(...)):
     result = report.create_report(authorization, request.task_id, request.title, request.description, request.attachments)
     return result
 
-@router.post("/del_report")
+@router.post("/manager/del_report")
 def del_report(request: getReportId, authorization: str = Header(...)):
     result = report.del_report(authorization, request.report_id)
     return result
 
-@router.post("/report_set_status")
+@router.post("/manager/report_set_status")
 def report_set_status(request: setStatus, authorization: str = Header(...)):
     result = report.report_set_status(authorization, request.report_id, request.status)
     return result
 
-@router.post("/load_reports")
+@router.post("/manager/load_reports")
 def load_reports(request: getTaskId, authorization: str = Header(...)):
-    result = report.load_reports(authorization, request.task_id)
+    result = report.load_reports(authorization, request.task_id, None)
     return result
 
-@router.get("/uploads/reports/{filename}")
+@router.get("/manager/uploads/reports/{filename}")
 def get_report_att(filename: str):
     result = report.get_report_att(filename)
     return result

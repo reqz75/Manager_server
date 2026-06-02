@@ -15,12 +15,12 @@ class AythData(BaseModel):
 
 
 
-@router.post("/registration")
+@router.post("/manager/registration")
 def registration(data: AythData):
     result = auth.register(data.login, data.password)
     return result
 
-@router.post("/login")
+@router.post("/manager/login")
 def login(data: AythData):
     result = auth.auto(data.login, data.password)
     return result

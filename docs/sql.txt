@@ -108,7 +108,7 @@ AFTER INSERT ON users
 FOR EACH ROW
 BEGIN
     INSERT INTO profiles (user_id, name, avatar, registered_at)
-    VALUES (NEW.id, NEW.login, 'uploads/avatars/default_avatar.png', NOW());
+    VALUES (NEW.id, NEW.login, NOW(), NOW());
 END$$
 
 DELIMITER ;
@@ -164,6 +164,19 @@ BEGIN
     
     -- Обновляем departments (head_id)
     UPDATE departments SET head_id = NULL WHERE head_id = OLD.id;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER add_creator_to_task_members
+AFTER INSERT ON tasks
+FOR EACH ROW
+BEGIN
+    INSERT INTO task_members (task_id, user_id)
+    VALUES (NEW.id, NEW.created_by)
+    ON DUPLICATE KEY UPDATE task_id = task_id;
 END$$
 
 DELIMITER ;

@@ -13,12 +13,12 @@ class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     contact_info: Optional[str] = None
 
-@router.post("/profile")
+@router.post("/manager/profile")
 def load_profile(authorization: str = Header(...)):
     result = sessions.load_profile(authorization)
     return result
 
-@router.post("/profile-edit")
+@router.post("/manager/profile-edit")
 def edit_profile(
     authorization: str = Header(...),
     name: str = Form(None),
@@ -33,12 +33,12 @@ def edit_profile(
     )
     return result
 
-@router.get("/profile/{login}")
+@router.get("/manager/profile/{login}")
 def load_other_profile(login: str):
     result = sessions.load_profile_login(login)
     return result
 
-@router.get("/uploads/avatars/{filename}")
+@router.get("/manager/uploads/avatars/{filename}")
 def load_avatars(filename: str):
     result = sessions.load_avatars(filename)
     return result

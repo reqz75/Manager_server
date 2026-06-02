@@ -265,3 +265,35 @@ class work:
             if result.rowcount > 0:
                 return {'removed': member_login, 'task_id': task_id}
             return None
+    
+    def get_department_members(self, token):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        sql = "SELECT u.login, p.name, p.contact_info, p.avatar, p.role FROM department_members dm JOIN users u ON dm.member_id = u.id LEFT JOIN profiles p ON u.id = p.user_id WHERE dm.department_id = (SELECT department_id FROM department_members WHERE member_id = (SELECT id FROM users WHERE login = :login) LIMIT 1)"
+        
+        with self.engine.connect() as conn:
+            result = conn.execute(text(sql), {'login': login}).fetchall()
+        
+        return [dict(row._mapping) for row in result] if result else []
+
+    def get_task_members(self, token, task_id):
+        token = jwt_coder.check_token(token)
+        if not token:
+            return None
+
+        login = token.get('login')
+        if not login:
+            return None
+
+        sql = "SELECT u.login, p.name, p.contact_info, p.avatar, p.role FROM task_members tm JOIN users u ON tm.user_id = u.id LEFT JOIN profiles p ON u.id = p.user_id WHERE tm.task_id = :task_id AND EXISTS (SELECT 1 FROM task_members WHERE task_id = :task_id AND user_id = (SELECT id FROM users WHERE login = :login))"
+        
+        with self.engine.connect() as conn:
+            result = conn.execute(text(sql), {'task_id': task_id, 'login': login}).fetchall()
+        
+        return [dict(row._mapping) for row in result] if result else []
